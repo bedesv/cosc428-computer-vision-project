@@ -110,7 +110,7 @@ class FrontEnd(object):
             mask1 = cv2.inRange(img_hsv, (0,100,150), (190,255,255))
             # mask2 = cv2.inRange(img_hsv, (175,50,20), (180,255,255))
 
-            ## Merge the mask and crop the red regions
+            ## Merge the mask and crop the red regions 
             # mask = cv2.bitwise_or(mask1, mask2 )
             cropped = cv2.bitwise_and(img_hsv, img_hsv, mask=mask1)
             frame = cv2.cvtColor(cropped, cv2.COLOR_HSV2RGB)
