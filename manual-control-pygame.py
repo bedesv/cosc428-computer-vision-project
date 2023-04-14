@@ -3,6 +3,7 @@ import cv2
 import pygame
 import numpy as np
 import time
+from threading import Thread
 
 # Speed of the drone
 # 无人机的速度
@@ -47,7 +48,7 @@ class FrontEnd(object):
 
         # Init Tello object that interacts with the Tello drone
         # 初始化与Tello交互的Tello对象
-        self.tello = Tello()
+        self.tello = target=Tello()
 
         # Drone velocities between -100~100
         # 无人机各方向速度在-100~100之间
@@ -82,7 +83,7 @@ class FrontEnd(object):
 
             for event in pygame.event.get():
                 if event.type == pygame.USEREVENT + 1:
-                    self.update()
+                    Thread(target = self.update()).start()
                 elif event.type == pygame.QUIT:
                     should_stop = True
                 elif event.type == pygame.KEYDOWN:
@@ -100,20 +101,32 @@ class FrontEnd(object):
 
             frame = frame_read.frame
             # battery n. 电池
-            text = "Battery: {}%".format(self.tello.get_battery())
-            cv2.putText(frame, text, (5, 720 - 5),
-            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            # text = "Battery: {}%".format(self.tello.get_battery())
+            # cv2.putText(frame, text, (5, 720 - 5),
+            # cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
             frame = cv2.GaussianBlur(frame, (5, 5), cv2.BORDER_DEFAULT)
             img_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
             ## Gen lower mask (0-5) and upper mask (175-180) of RED
-            mask1 = cv2.inRange(img_hsv, (0,100,150), (190,255,255))
+            mask = cv2.inRange(img_hsv, (0,100,150), (190,255,255))
             # mask2 = cv2.inRange(img_hsv, (175,50,20), (180,255,255))
 
             ## Merge the mask and crop the red regions 
             # mask = cv2.bitwise_or(mask1, mask2 )
-            cropped = cv2.bitwise_and(img_hsv, img_hsv, mask=mask1)
-            frame = cv2.cvtColor(cropped, cv2.COLOR_HSV2RGB)
+ 
+            cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL,
+            cv2.CHAIN_APPROX_SIMPLE)
+
+            
+            if len(cnts) > 0:
+                c = max(cnts, key = cv2.contourArea)
+                epsilon = 0.01 * cv2.arcLength(c, True)
+                poly = cv2.approxPolyDP(c, epsilon, True)
+                cv2.drawContours(frame, [poly], -1, (0, 255, 0), 2)
+            # cropped = cv2.bitwise_and(img_hsv, img_hsv, mask=mask)
+            # frame = cv2.cvtColor(cropped, cv2.COLOR_HSV2RGB)
+
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             
             frame = np.rot90(frame)
             frame = np.flipud(frame)
@@ -157,6 +170,8 @@ class FrontEnd(object):
             frame = self.tello.get_frame_read()
             cv2.imwrite(f"picture{self.pic_number}.png", frame.frame)
             self.pic_number += 1
+        elif key == pygame.K_g:
+            self.tello.flip_left()
 
     def keyup(self, key):
         """ Update velocities based on key released
