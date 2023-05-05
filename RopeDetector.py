@@ -50,7 +50,7 @@ class RopeDetector:
         if rope_center[0] < frame_width // 3:
             movements[0] = (frame_width // 3) - rope_center[0]
         elif rope_center[0] > (frame_width // 3) * 2:
-            movements[0] = rope_center[0] - ((frame_width // 3) * 2) 
+            movements[0] = -1 * (rope_center[0] - ((frame_width // 3) * 2))
 
         return movements
         
@@ -95,7 +95,7 @@ class RopeDetector:
         
             movements = self.calculate_required_movements(rope_center, rope_width, img.shape[1])
 
-            # print(movements)
+            print(movements)
 
         return img, movements
     
@@ -114,6 +114,7 @@ if __name__ == "__main__":
     detector = RopeDetector()
     for i in range(2, 11):
         img = cv2.imread(f"picture{i}.png")
-        img, _ = detector.detect_rope(img)
+        img, movement = detector.detect_rope(img)
+        print(movement)
         cv2.imshow("Image", img)
         cv2.waitKey()

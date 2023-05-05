@@ -8,7 +8,7 @@ from RopeDetector import RopeDetector
 
 # Speed of the drone
 # 无人机的速度
-S = 60
+S = 20
 # Frames per second of the pygame window display
 # A low number also results in input lag, as input information is processed once per frame.
 # pygame窗口显示的帧数
@@ -52,6 +52,7 @@ class FrontEnd(object):
         self.tello = target=Tello()
 
         self.detector = RopeDetector()
+        self.rope_following = False
 
         # Drone velocities between -100~100
         # 无人机各方向速度在-100~100之间
@@ -80,7 +81,7 @@ class FrontEnd(object):
         self.tello.streamon()
 
         frame_read = self.tello.get_frame_read()
-
+        iterations = 0
         should_stop = False
         while not should_stop:
 
@@ -92,6 +93,15 @@ class FrontEnd(object):
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         should_stop = True
+                    elif event.key == pygame.K_g:
+                        self.rope_following = not self.rope_following
+                        if self.rope_following:
+                            self.for_back_velocity = 10
+                        else:
+                            self.left_right_velocity = 0
+                            self.up_down_velocity = 0
+                            self.for_back_velocity = 0
+
                     else:
                         self.keydown(event.key)
                 elif event.type == pygame.KEYUP:
@@ -130,11 +140,30 @@ class FrontEnd(object):
             # # frame = cv2.cvtColor(cropped, cv2.COLOR_HSV2RGB)
 
             frame, movements = self.detector.detect_rope(frame)
-            print(movements)
+            if self.rope_following and movements:
+                self.for_back_velocity = 20
+                if movements[0] < 0:
+                    self.left_right_velocity = 10
+                elif movements[0] > 0:
+                    self.left_right_velocity = -10
+                else:
+                    self.left_right_velocity = 0
+
+                if movements[1] < 0:
+                    self.up_down_velocity = -10
+                elif movements[1] > 0:
+                    self.up_down_velocity = 10   
+                else:
+                    self.up_down_velocity = 0
+            elif self.rope_following and movements is None:
+                self.left_right_velocity = 0
+                self.up_down_velocity = 0
+                self.for_back_velocity = 0
+                
 
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             
-            frame = np.rot90(frame)
+            frame = np.rot90(frame) 
             frame = np.flipud(frame)
 
             frame = pygame.surfarray.make_surface(frame)
