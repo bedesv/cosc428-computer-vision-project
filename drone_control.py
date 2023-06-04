@@ -6,7 +6,7 @@ import time
 from threading import Thread
 from RopeDetector import RopeDetector
 
-# Speed of the drone
+# Speed of the drone - Higher speeds result in less accurate rope tracking
 S = 20
 # Frames per second of the pygame window display
 # A low number also results in input lag, as input information is processed once per frame.
@@ -168,8 +168,6 @@ class FrontEnd(object):
             frame = self.tello.get_frame_read()
             cv2.imwrite(f"picture{self.pic_number}.png", frame.frame)
             self.pic_number += 1
-        elif key == pygame.K_g:
-            self.tello.flip_left()
 
     def keyup(self, key):
         """ 

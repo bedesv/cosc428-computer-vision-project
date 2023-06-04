@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 from numpy.linalg import norm
-import imutils
 
 MASK_BOUNDS = [(80,70,50), (100,255,255)]
 IMAGE_CENTER_BOUNDS = 960
